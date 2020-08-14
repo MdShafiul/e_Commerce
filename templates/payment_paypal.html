@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+{% endblock extra_head %}
+
+{% block content %}
+<main>
+    <div class="container wow fadeIn">
+
+      <h2 class="my-5 h2 text-center">Payment</h2>
+
+      <div class="row d-flex justify-content-center">
+
+        <div class="col-md-4 mb-4">
+          <div class="card">
+          <form method="post">
+            <!-- Set up a container element for the button -->
+            <div id="paypal-button-container" class="ml-1 mt-1 mr-1"></div>
+
+            <!-- Include the PayPal JavaScript SDK -->
+            <script src="https://www.paypal.com/sdk/js?client-id=AVBqrZ7YeKpb43nPYW_Qqx7ln2camfdmi4muTUmc1gyy6-pcndST6KivVYGQ2bmqBC3gEmO1PUqyx5_p&currency=USD&disable-funding=card"></script>
+
+            <script>
+                var total = '{{ order.get_total }}'
+
+                // Render the PayPal button into #paypal-button-container
+                paypal.Buttons({
+
+                    style: {
+                        color:  'gold',
+                        shape:  'pill',
+                        label: 'checkout',
+                        height: 40,
+                        size: 'responsive'
+                    },
+
+                    // Set up the transaction
+                    createOrder: function(data, actions) {
+                        return actions.order.create({
+                            purchase_units: [{
+                                amount: {
+                                    value: parseFloat(total).toFixed(2)
+                                }
+                            }]
+                        });
+                    },
+
+                    // Finalize the transaction
+                    onApprove: function(data, actions) {
+                        return actions.order.capture().then(function(details) {
+                            // Show a success message to the buyer
+                            alert('Transaction completed by ' + details.payer.name.given_name + '!');
+                        });
+                    }
+
+
+                }).render('#paypal-button-container');
+            </script>
+          </div>
+        </div>
+      </div>
+    </div>
+</main>
+{% endblock content %}

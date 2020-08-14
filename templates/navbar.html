@@ -1,0 +1,54 @@
+{% load cart_template_tags %}
+
+<nav class="navbar fixed-top navbar-expand-lg navbar-dark mdb-color lighten-1 scrolling-navbar bg-primary">
+    <div class="container">
+
+      <!-- Brand -->
+      <a class="navbar-brand waves-effect" href="/">
+        <strong class="">ECommerce</strong>
+      </a>
+
+      <!-- Collapse -->
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarColor01" aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <!-- Links -->
+      <div class="collapse navbar-collapse" id="navbarColor01">
+          <!-- Right -->
+          <ul class="navbar-nav ml-auto">
+              {% if request.user.is_authenticated %}
+              <li class="nav-item mr-2">
+                <a class="nav-link waves-effect" href="#">
+                    <span class="clearfix d-none d-sm-inline-block"> Track your order </span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="{% url 'ECommerce:order-summary' %}" class="nav-link waves-effect">
+                  <span class="badge red z-depth-1 mr-1"> {{ request.user|cart_item_count }} </span>
+                  <i class="fas fa-shopping-cart"></i>
+                  <span class="clearfix d-none d-sm-inline-block"> Cart </span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link waves-effect" href="{% url 'account_logout' %}">
+                  <span class="clearfix d-none d-sm-inline-block"> Logout </span>
+                </a>
+              </li>
+              {% else %}
+              <li class="nav-item">
+                <a class="nav-link waves-effect" href="{% url 'account_login' %}">
+                  <span class="clearfix d-none d-sm-inline-block"> Login </span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link waves-effect" href="{% url 'account_signup' %}">
+                  <span class="clearfix d-none d-sm-inline-block"> Signup </span>
+                </a>
+              </li>
+              {% endif %}
+          </ul>
+      </div>
+
+    </div>
+</nav>
