@@ -570,7 +570,7 @@ class RequestRefundView(View):
 @login_required
 def order_received(request):
     try:
-        order = Order.objects.get(user=request.user, received=False)
+        order = Order.objects.get(user=request.user, being_delivered=True, received=False)
         order.received = True
         order.save()
         messages.info(request, "Thanks for buying from us")
