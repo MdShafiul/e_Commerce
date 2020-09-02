@@ -1,66 +1,86 @@
 {% extends "base.html" %}
 
+{% block head_title %}Paypal Payment{% endblock %}
+
 {% block extra_head %}
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+{% load static %}
+<link href="{% static 'braintree/css/app.css' %}" rel="stylesheet">
+<link href="{% static 'braintree/css/overrides.css' %}" rel="stylesheet">
+
 {% endblock extra_head %}
 
 {% block content %}
-<main>
-    <div class="container wow fadeIn">
 
-      <h2 class="my-5 h2 text-center">Payment</h2>
+<div class="wrapper">
+  <div class="checkout container">
 
-      <div class="row d-flex justify-content-center">
+    {% include "order_snippet.html" %}
 
-        <div class="col-md-4 mb-4">
-          <div class="card">
-          <form method="post">
-            <!-- Set up a container element for the button -->
-            <div id="paypal-button-container" class="ml-1 mt-1 mr-1"></div>
+    <div class="col-md-12 mb-4 pt-4">
 
-            <!-- Include the PayPal JavaScript SDK -->
-            <script src="https://www.paypal.com/sdk/js?client-id=AVBqrZ7YeKpb43nPYW_Qqx7ln2camfdmi4muTUmc1gyy6-pcndST6KivVYGQ2bmqBC3gEmO1PUqyx5_p&currency=USD&disable-funding=card"></script>
-
-            <script>
-                var total = '{{ order.get_total }}'
-
-                // Render the PayPal button into #paypal-button-container
-                paypal.Buttons({
-
-                    style: {
-                        color:  'gold',
-                        shape:  'pill',
-                        label: 'checkout',
-                        height: 40,
-                        size: 'responsive'
-                    },
-
-                    // Set up the transaction
-                    createOrder: function(data, actions) {
-                        return actions.order.create({
-                            purchase_units: [{
-                                amount: {
-                                    value: parseFloat(total).toFixed(2)
-                                }
-                            }]
-                        });
-                    },
-
-                    // Finalize the transaction
-                    onApprove: function(data, actions) {
-                        return actions.order.capture().then(function(details) {
-                            // Show a success message to the buyer
-                            alert('Transaction completed by ' + details.payer.name.given_name + '!');
-                        });
-                    }
+    <header>
+      <h4>
+        Payment using PayPal or a card
+      </h4>
+    </header>
 
 
-                }).render('#paypal-button-container');
-            </script>
-          </div>
-        </div>
-      </div>
+
+            <form id="payment-form" method="post" action=".">
+
+              <section>
+
+                <div class="bt-drop-in-wrapper pl-1 pr-1">
+                  <div id="bt-dropin"></div>
+                </div>
+              </section>
+              {% csrf_token %}
+              <input type="hidden" id="nonce" name="payment_method_nonce" />
+              <button class="button" type="submit" id="submit-button"><span>Submit</span></button>
+            </form>
+
+
+
     </div>
-</main>
+
+  </div>
+
+</div>
+
 {% endblock content %}
+
+{% block extra_scripts %}
+
+<!-- Implementation -->
+   <script src="https://js.braintreegateway.com/web/dropin/1.23.0/js/dropin.min.js"></script>
+    <script>
+      var form = document.querySelector('#payment-form');
+      var client_token = '{{ client_token }}';
+
+      braintree.dropin.create({
+        authorization: client_token,
+        container: '#bt-dropin',
+        paypal: {
+          flow: 'vault'
+        }
+      }, function (createErr, instance) {
+        form.addEventListener('submit', function (event) {
+          event.preventDefault();
+
+          instance.requestPaymentMethod(function (err, payload) {
+            if (err) {
+              console.log('Error', err);
+              return;
+            }
+
+            // Add the nonce to the form and submit
+            document.querySelector('#nonce').value = payload.nonce;
+            form.submit();
+          });
+        });
+      });
+    </script>
+
+<script type="text/javascript" src="{% static 'braintree/javascript/demo.js' %}"></script>
+
+{% endblock extra_scripts %}

@@ -9,6 +9,7 @@ from django.shortcuts import redirect
 from django.utils import timezone
 from .forms import CheckoutForm, CouponForm, RefundForm, PaymentForm
 from .models import Item, OrderItem, Order, Address, Payment, Coupon, Refund, UserProfile
+from .extras import transact, generate_client_token
 
 import random
 import string
@@ -342,9 +343,11 @@ class AddCouponView(View):
 class PaymentView(View):
     def get(self, *args, **kwargs):
         order = Order.objects.get(user=self.request.user, ordered=False)
+        client_token = generate_client_token()
         if order.billing_address:
             context = {
                 'order': order,
+                'client_token': client_token,
                 'DISPLAY_COUPON_FORM': False
             }
             userprofile = self.request.user.userprofile
@@ -362,7 +365,7 @@ class PaymentView(View):
                         context.update({
                             'card': card_list[0]
                         })
-                return render(self.request, "payment.html", context)
+                return render(self.request, "payment_stripe.html", context)
             elif self.kwargs['payment_option'] == 'paypal':
                 return render(self.request, "payment_paypal.html", context)
         else:
@@ -370,7 +373,7 @@ class PaymentView(View):
                 self.request, "You have not added a billing address")
             return redirect("core:checkout")
 
-    def post(self, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         order = Order.objects.get(user=self.request.user, ordered=False)
         userprofile = UserProfile.objects.get(user=self.request.user)
         if self.kwargs['payment_option'] == 'stripe':
@@ -434,7 +437,7 @@ class PaymentView(View):
                     order.save()
 
                     messages.success(self.request, "Your order was successful!")
-                    return redirect("/")
+                    return redirect("/track-your-order/")
 
                 except stripe.error.CardError as e:
                     body = e.json_body
@@ -481,23 +484,52 @@ class PaymentView(View):
             return redirect("/payment/stripe/")
 
         elif self.kwargs['payment_option'] == 'paypal':
-            # create the payment
-            payment = Payment()
-            payment.user = self.request.user
-            payment.amount = order.get_total()
-            payment.save()
+            amount = str(order.get_total())
+            result = transact({
+                'amount': amount,
+                'payment_method_nonce': request.POST['payment_method_nonce'],
+                'options': {
+                    "submit_for_settlement": True
+                }
+            })
 
-            # assign the payment to the order
+            if result.is_success or result.transaction:
+                # create the payment
+                payment = Payment()
+                payment.user = self.request.user
+                payment.amount = amount
+                payment.save()
 
-            order_items = order.items.all()
-            order_items.update(ordered=True)
-            for item in order_items:
-                item.save()
+                # assign the payment to the order
 
-            order.ordered = True
-            order.payment = payment
-            order.ref_code = create_ref_code()
-            order.save()
+                order_items = order.items.all()
+                order_items.update(ordered=True)
+                for item in order_items:
+                    item.save()
+
+                order.ordered = True
+                order.payment = payment
+                order.ref_code = create_ref_code()
+                order.save()
+
+                messages.success(self.request, "Your order was successful!")
+                return redirect("/track-your-order/")
+            else:
+                for x in result.errors.deep_errors:
+                    messages.info('Error: %s: %s' % (x.code, x.message))
+                return redirect("/payment/paypal/")
+
+
+class OrderTracking(View):
+    def get(self, *args, **kwargs):
+        try:
+            order = Order.objects.get(user=self.request.user, ordered=True, received=False)
+            context = {
+                'order': order
+            }
+            return render(self.request, 'order_tracking.html', context)
+        except ObjectDoesNotExist:
+            messages.warning(self.request, "You do not have any ordered item")
             return redirect("/")
 
 
@@ -534,3 +566,27 @@ class RequestRefundView(View):
             except ObjectDoesNotExist:
                 messages.info(self.request, "This order does not exist.")
                 return redirect("ECommerce:request-refund")
+
+@login_required
+def order_received(request):
+    try:
+        order = Order.objects.get(user=request.user, received=False)
+        order.received = True
+        order.save()
+        messages.info(request, "Thanks for buying from us")
+        return redirect("ECommerce:home")
+
+    except ObjectDoesNotExist:
+        messages.info(request, "This order does not exist.")
+        return redirect("ECommerce:home")
+
+@login_required
+def order_not_received(request):
+    try:
+        order = Order.objects.get(user=request.user, received=False)
+        messages.info(request, "Our rider is coming soon. If it's late then contact us.")
+        return redirect("ECommerce:track-your-order")
+
+    except ObjectDoesNotExist:
+        messages.info(request, "This order does not exist or you already received.")
+        return redirect("ECommerce:track-your-order")

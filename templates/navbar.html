@@ -20,6 +20,11 @@
               {% if request.user.is_authenticated %}
               <li class="nav-item mr-2">
                 <a class="nav-link waves-effect" href="#">
+                    <span class="clearfix d-none d-sm-inline-block"> <i class="fas fa-comment-alt"></i> </span>
+                </a>
+              </li>
+              <li class="nav-item mr-2">
+                <a class="nav-link waves-effect" href="{% url 'ECommerce:track-your-order' %}">
                     <span class="clearfix d-none d-sm-inline-block"> Track your order </span>
                 </a>
               </li>

@@ -103,6 +103,9 @@ class Order(models.Model):
         'Payment', on_delete=models.SET_NULL, blank=True, null=True)
     coupon = models.ForeignKey(
         'Coupon', on_delete=models.SET_NULL, blank=True, null=True)
+    processing = models.BooleanField(default=False)
+    packaging = models.BooleanField(default=False)
+    rider_on_the_way = models.BooleanField(default=False)
     being_delivered = models.BooleanField(default=False)
     received = models.BooleanField(default=False)
     refund_requested = models.BooleanField(default=False)

@@ -135,6 +135,16 @@ LOGIN_REDIRECT_URL = '/'
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
-# stripe api key
+# stripe and braintree settings
 
-STRIPE_SECRET_KEY = config('SECRET_KEY')
+if DEBUG:
+    #test keys
+    STRIPE_SECRET_KEY = config('SECRET_KEY')
+    BT_ENVIRONMENT = 'sandbox'
+    BT_MERCHANT_ID = config('BT_MERCHANT_ID')
+    BT_PUBLIC_KEY = config('BT_PUBLIC_KEY')
+    BT_PRIVATE_KEY = config('BT_PRIVATE_KEY')
+    APP_SECRET_KEY = config('APP_SECRET_KEY')
+else:
+    #live keys
+    STRIPE_SECRET_KEY = config('SECRET_KEY')

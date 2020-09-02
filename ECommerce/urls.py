@@ -10,6 +10,9 @@ from .views import (
     remove_single_item_from_cart,
     PaymentView,
     AddCouponView,
+    OrderTracking,
+    order_not_received,
+    order_received,
     RequestRefundView
 )
 
@@ -26,5 +29,8 @@ path('', HomeView.as_view(), name='home'),
     path('remove-item-from-cart/<slug>/', remove_single_item_from_cart,
          name='remove-single-item-from-cart'),
     path('payment/<payment_option>/', PaymentView.as_view(), name='payment'),
+    path('track-your-order/', OrderTracking.as_view(), name='track-your-order'),
+    path('order-not-received/', order_not_received, name='order-not-received'),
+    path('order-received/', order_received, name='order-received'),
     path('request-refund/', RequestRefundView.as_view(), name='request-refund')
 ]

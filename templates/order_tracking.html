@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block head_title %}Track Your Order{% endblock %}
+
+{% block content %}
+
+<div class="container">
+
+    <div class="col-md-12 mb-5 mt-4">
+        <h4 class="d-flex justify-content-between align-items-center mb-3">
+        <span class="text-muted">Your Order</span>
+        <span class="badge badge-secondary badge-pill">{{ order.items.count }}</span>
+        </h4>
+        <ul class="list-group mb-3 z-depth-1">
+        {% for order_item in order.items.all %}
+        <li class="list-group-item d-flex justify-content-between lh-condensed">
+            <div>
+            <h6 class="my-0">{{ order_item.quantity }} x {{ order_item.item.title}}</h6>
+            <small class="text-muted">{{ order_item.item.description}}</small>
+            </div>
+            <span class="text-muted">${{ order_item.get_final_price }}</span>
+        </li>
+        {% endfor %}
+        {% if order.coupon %}
+        <li class="list-group-item d-flex justify-content-between bg-light">
+            <div class="text-success">
+            <h6 class="my-0">Promo code</h6>
+            <small>{{ order.coupon.code }}</small>
+            </div>
+            <span class="text-success">-${{ order.coupon.amount }}</span>
+        </li>
+        {% endif %}
+        <li class="list-group-item d-flex justify-content-between">
+            <span>Total (USD)</span>
+            <strong>${{ order.get_total }}</strong>
+        </li>
+        </ul>
+
+        {% if DISPLAY_COUPON_FORM %}
+        <form class="card p-2" action="{% url 'ECommerce:add-coupon' %}" method="POST">
+            {% csrf_token %}
+            <div class="input-group">
+                {{ couponform.code }}
+                <div class="input-group-append">
+                <button class="btn btn-secondary btn-md waves-effect m-0" type="submit">Redeem</button>
+                </div>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+
+    <div class="col-md-8 mb-5 mt-4">
+        <h4 class="d-flex justify-content-between align-items-center mb-3">
+        <span class="text-muted">Track Order</span>
+        {% if order.packaging == False %}
+        <a href="#">
+            <span class="badge badge-danger badge-pill"><i>Cancel order</i></span>
+        </a>
+        {% endif %}
+        </h4>
+        <ul class="list-group mb-3 z-depth-1">
+            <li class="list-group-item d-flex justify-content-between lh-condensed">
+                <div>
+                <h6 class="my-0">Got your order</h6>
+                </div>
+                <span class="text-muted"><i class="fas fa-check" style="color: green;"></i></span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between lh-condensed">
+                <div>
+                <h6 class="my-0">Processing your order</h6>
+                </div>
+                {% if order.processing %}
+                <span class="text-muted"><i class="fas fa-check" style="color: green;"></i></span>
+                {% elif order.ordered and order.processing == False %}
+                <div class="spinner-border" role="status" style="color: #006aff;">
+                  <span class="sr-only"></span>
+                </div>
+                {% endif %}
+            </li>
+            <li class="list-group-item d-flex justify-content-between lh-condensed">
+                <div>
+                <h6 class="my-0">Packaging your order</h6>
+                </div>
+                {% if order.packaging %}
+                <span class="text-muted"><i class="fas fa-check" style="color: green;"></i></span>
+                {% elif order.processing and order.packaging == False %}
+                <div class="spinner-border" role="status" style="color: #006aff;">
+                  <span class="sr-only"></span>
+                </div>
+                {% endif %}
+            </li>
+            <li class="list-group-item d-flex justify-content-between lh-condensed">
+                <div>
+                <h6 class="my-0">Rider is on the way</h6>
+                </div>
+                {% if order.rider_on_the_way %}
+                <span class="text-muted"><i class="fas fa-check" style="color: green;"></i></span>
+                {% elif order.packaging and order.rider_on_the_way == False %}
+                <div class="spinner-border" role="status" style="color: #006aff;">
+                  <span class="sr-only"></span>
+                </div>
+                {% endif %}
+            </li>
+            <li class="list-group-item d-flex justify-content-between lh-condensed">
+                <div>
+                <h6 class="my-0">Your order is arriving</h6>
+                </div>
+                {% if order.being_delivered %}
+                <span class="text-muted"><i class="fas fa-check" style="color: green;"></i></span>
+                {% elif order.rider_on_the_way and order.being_delivered == False %}
+                <div class="spinner-border" role="status" style="color: #006aff;">
+                  <span class="sr-only"></span>
+                </div>
+                {% endif %}
+            </li>
+        </ul>
+    </div>
+
+    {% if order.being_delivered %}
+    <div class="text-center mb-5">
+        <h1>Did you get your order ?</h1>
+        <div class="row text-white d-flex justify-content-center">
+            <a class="btn btn-outline-danger btn-rounded waves-effect" href="{% url 'ECommerce:order-not-received' %}">No</a>
+            <a class="btn btn-outline-success btn-rounded waves-effect" href="{% url 'ECommerce:order-received' %}">Yes</a>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock content %}
