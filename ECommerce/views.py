@@ -32,7 +32,7 @@ def is_valid_form(values):
 
 class HomeView(ListView):
     model = Item
-    paginate_by = 10
+    paginate_by = 5
     template_name = "home.html"
 
 
